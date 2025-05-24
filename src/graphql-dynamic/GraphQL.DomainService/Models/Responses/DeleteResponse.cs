@@ -1,6 +1,6 @@
 using System;
 
-namespace GraphQL.DomainService.Models.Responses;
+namespace GraphQL.DomainService.Models;
 
 public class DeleteResponse
 {

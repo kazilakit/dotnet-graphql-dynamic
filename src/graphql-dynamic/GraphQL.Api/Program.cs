@@ -1,3 +1,4 @@
+using GraphQL.DomainService.Helpers;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +11,13 @@ builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnection
 builder.Services.AddSingleton(serviceProvider =>
     serviceProvider.GetRequiredService<IMongoClient>().GetDatabase("GraphQL"));
 
-
+// Register GraphQL
+builder.Services
+    .AddGraphQLServer()
+    .ConfigureSchemaAsync(async (services, schemaBuilder, cancellationToken) =>
+    {
+        await DynamicSchemaBuilderExtensions.BuildDynamicSchema(services, schemaBuilder, cancellationToken);
+    });
 
 var app = builder.Build();
 
