@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>graphql_dynamic</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="../GraphQL.DomainService/GraphQL.DomainService.csproj" />
+    </ItemGroup>
+
+    <!-- <ItemGroup>
+        <PackageReference Include="HotChocolate.AspNetCore" Version="15.0.3" />
+        <PackageReference Include="HotChocolate.Types" Version="15.0.3" />
+        <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
+    </ItemGroup> -->
+
+</Project>
