@@ -4,11 +4,11 @@ using GraphQL.DomainService.Enities;
 
 namespace GraphQL.DomainService.GraphTypes;
 
-public class DynamicDeleteInputType : InputObjectType
+public class DeleteInputType : InputObjectType
 {
     private readonly SchemaDefinition _schema;
 
-    public DynamicDeleteInputType(SchemaDefinition schema)
+    public DeleteInputType(SchemaDefinition schema)
     {
         _schema = schema;
     }

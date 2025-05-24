@@ -3,12 +3,12 @@ using HotChocolate.Language;
 
 namespace GraphQL.DomainService.GraphTypes;
 
-public class DynamicObjectType : ObjectType<object>
+public class QueryOutputType : ObjectType<object>
 {
     private readonly SchemaDefinition _schema;
     private readonly Dictionary<string, SchemaDefinition> _schemaMap;
 
-    public DynamicObjectType(SchemaDefinition schema, Dictionary<string, SchemaDefinition> schemaMap)
+    public QueryOutputType(SchemaDefinition schema, Dictionary<string, SchemaDefinition> schemaMap)
     {
         _schema = schema;
         _schemaMap = schemaMap;

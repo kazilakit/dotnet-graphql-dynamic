@@ -3,7 +3,7 @@ using GraphQL.DomainService.Models;
 
 namespace GraphQL.DomainService.GraphTypes;
 
-public class DynamicQueryInputType : InputObjectType<DynamicQueryInput>
+public class QueryInputType : InputObjectType<DynamicQueryInput>
 {
     protected override void Configure(IInputObjectTypeDescriptor<DynamicQueryInput> descriptor)
     {

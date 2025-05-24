@@ -1,28 +1,27 @@
-using System.Collections.Concurrent;
 using GraphQL.DomainService.Enities;
 using HotChocolate.Language;
+using System.Collections.Concurrent;
 
 namespace GraphQL.DomainService.GraphTypes;
 
-public class DynamicUpdateInputType : InputObjectType<object>
+public class InsertInputType : InputObjectType<object>
 {
     private readonly SchemaDefinition _schema;
     private readonly Dictionary<string, SchemaDefinition> _schemaMap;
 
     private static readonly ConcurrentDictionary<string, InputObjectType> _cache = new();
 
-    public DynamicUpdateInputType(SchemaDefinition schema, Dictionary<string, SchemaDefinition> schemaMap)
+    public InsertInputType(SchemaDefinition schema, Dictionary<string, SchemaDefinition> schemaMap)
     {
         _schema = schema;
         _schemaMap = schemaMap;
-        // Name = $"{schema.CollectionName}UpdateInput";
     }
 
     protected override void Configure(IInputObjectTypeDescriptor<object> descriptor)
     {
-        descriptor.Name($"{_schema.CollectionName}UpdateInput");
 
-        descriptor.Field("_id").Type<IdType>();
+        descriptor.Name($"{_schema.CollectionName}InsertInput");
+
 
         foreach (var field in _schema.Fields)
         {
@@ -38,12 +37,12 @@ public class DynamicUpdateInputType : InputObjectType<object>
             {
                 if (field.IsArray)
                 {
-                    var itemType = GetCustomType($"{field.Type}UpdateInput");
-                    descriptor.Field(fieldName).Type(new ListTypeNode(itemType));
+                    var innerType = GetCustomType($"{field.Type}InsertInput");
+                    descriptor.Field(fieldName).Type(new ListTypeNode(innerType));
                 }
                 else
                 {
-                    descriptor.Field(fieldName).Type(GetCustomType($"{field.Type}UpdateInput"));
+                    descriptor.Field(fieldName).Type(GetCustomType($"{field.Type}InsertInput"));
                 }
             }
         }
@@ -71,4 +70,5 @@ public class DynamicUpdateInputType : InputObjectType<object>
     {
         return new NamedTypeNode(type); // Assuming type is a valid GraphQL type name
     }
+
 }
