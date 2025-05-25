@@ -1,21 +1,25 @@
-using System.Linq;
+using System;
 using GraphQL.DomainService.Enities;
 using GraphQL.DomainService.GraphTypes;
-using GraphQL.DomainService.Models;
 using GraphQL.DomainService.Resolvers;
-using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
+namespace GraphQL.DomainService.Services;
 
-namespace GraphQL.DomainService;
-
-public static class SchemaBuilderExtensions
+public class SchemaBuilderService
 {
-    public static async Task BuildSchema(IServiceProvider services, ISchemaBuilder schemaBuilder, CancellationToken cancellationToken)
+    private readonly IMongoDatabase _mongoDb;
+    private readonly QueryResolver _queryResolver;
+    private readonly MutationResolver _mutationResolver;
+    public SchemaBuilderService(IMongoDatabase mongoDb, QueryResolver queryResolver, MutationResolver mutationResolver)
     {
-        var mongoDb = services.GetRequiredService<IMongoDatabase>();
-        var schemas = await LoadSchemaDefinitions(mongoDb, cancellationToken);
+        _queryResolver = queryResolver;
+        _mutationResolver = mutationResolver;
+        _mongoDb = mongoDb;
+    }
+    public async Task BuildSchema(ISchemaBuilder schemaBuilder, CancellationToken cancellationToken)
+    {
+        var schemas = await LoadSchemaDefinitions(cancellationToken);
         var customTypes = schemas.ToDictionary(s => s.CollectionName, s => s);
 
         var outputTypes = schemas.ToDictionary(
@@ -30,21 +34,19 @@ public static class SchemaBuilderExtensions
             s => s.CollectionName,
             s => new UpdateInputType(s, customTypes));
 
-        var queryType = BuildQueryType(mongoDb, schemas, outputTypes);
-        var mutationType = BuildMutationType(mongoDb, schemas, insertInputTypes, updateInputTypes);
+        var queryType = BuildQueryType(schemas, outputTypes);
+        var mutationType = BuildMutationType(schemas, insertInputTypes, updateInputTypes);
 
         schemaBuilder.AddQueryType(queryType);
         schemaBuilder.AddMutationType(mutationType);
     }
-
-    private static async Task<List<SchemaDefinition>> LoadSchemaDefinitions(IMongoDatabase db, CancellationToken cancellationToken)
+    private async Task<List<SchemaDefinition>> LoadSchemaDefinitions(CancellationToken cancellationToken)
     {
-        var collection = db.GetCollection<SchemaDefinition>("schemas");
+        var collection = _mongoDb.GetCollection<SchemaDefinition>("schemas");
         return await collection.Find(FilterDefinition<SchemaDefinition>.Empty).SortByDescending(x => x.SchemaOnly).ToListAsync(cancellationToken);
     }
 
-    private static ObjectType BuildQueryType(
-        IMongoDatabase mongoDb,
+    private ObjectType BuildQueryType(
         IEnumerable<SchemaDefinition> schemas,
         Dictionary<string, QueryOutputType> dynamicTypes)
     {
@@ -54,13 +56,12 @@ public static class SchemaBuilderExtensions
 
             foreach (var schema in schemas)
             {
-                QueryResolver.ResolveSchema(mongoDb, descriptor, schema, dynamicTypes);
+                _queryResolver.ResolveSchema(descriptor, schema, dynamicTypes);
             }
         });
     }
 
-    private static ObjectType BuildMutationType(
-        IMongoDatabase mongoDb,
+    private ObjectType BuildMutationType(
         IEnumerable<SchemaDefinition> schemas,
         Dictionary<string, InsertInputType> insertInputTypes,
         Dictionary<string, UpdateInputType> updateInputTypes)
@@ -71,13 +72,10 @@ public static class SchemaBuilderExtensions
 
             foreach (var schema in schemas)
             {
-                MutationResolver.ResolveInsertSchema(mongoDb, descriptor, schema, insertInputTypes[schema.CollectionName]);
-                MutationResolver.ResolveUpdateSchema(mongoDb, descriptor, schema, updateInputTypes[schema.CollectionName]);
-                MutationResolver.ResolveDeleteSchema(mongoDb, descriptor, schema);
+                _mutationResolver.ResolveInsertSchema(descriptor, schema, insertInputTypes[schema.CollectionName]);
+                _mutationResolver.ResolveUpdateSchema(descriptor, schema, updateInputTypes[schema.CollectionName]);
+                // MutationResolver.ResolveDeleteSchema(_mongoDb, descriptor, schema);
             }
         });
     }
-
 }
-
-

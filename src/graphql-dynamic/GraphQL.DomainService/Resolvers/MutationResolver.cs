@@ -8,8 +8,12 @@ namespace GraphQL.DomainService.Resolvers;
 
 public class MutationResolver
 {
-    public static void ResolveInsertSchema(
-    IMongoDatabase mongoDb,
+    private readonly IMongoDatabase _mongoDb;
+    public MutationResolver(IMongoDatabase mongoDb)
+    {
+        _mongoDb = mongoDb;
+    }
+    public void ResolveInsertSchema(
     IObjectTypeDescriptor descriptor,
     SchemaDefinition schema,
     InputObjectType inputType)
@@ -22,7 +26,7 @@ public class MutationResolver
             .Resolve(async ctx =>
             {
                 var input = ctx.ArgumentValue<Dictionary<string, object>>("input");
-                var collection = mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
+                var collection = _mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
 
                 var document = BsonDocument.Create(input);
                 await collection.InsertOneAsync(document);
@@ -35,8 +39,7 @@ public class MutationResolver
             });
     }
 
-    public static void ResolveUpdateSchema(
-        IMongoDatabase mongoDb,
+    public void ResolveUpdateSchema(
         IObjectTypeDescriptor descriptor,
         SchemaDefinition schema,
         InputObjectType inputType)
@@ -52,7 +55,7 @@ public class MutationResolver
                 var filterJson = ctx.ArgumentValue<string>("filter");
                 var input = ctx.ArgumentValue<Dictionary<string, object>>("input");
 
-                var collection = mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
+                var collection = _mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
                 var filter = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(filterJson);
 
                 var update = new BsonDocument("$set", new BsonDocument(
@@ -68,8 +71,7 @@ public class MutationResolver
             });
     }
 
-    public static void ResolveDeleteSchema(
-        IMongoDatabase mongoDb,
+    public void ResolveDeleteSchema(
         IObjectTypeDescriptor descriptor,
         SchemaDefinition schema)
     {
@@ -83,7 +85,7 @@ public class MutationResolver
                 var filterJson = ctx.ArgumentValue<string>("filter");
                 var filter = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(filterJson);
 
-                var collection = mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
+                var collection = _mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
                 var result = await collection.DeleteManyAsync(filter);
 
                 return new DeleteResponse
