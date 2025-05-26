@@ -1,4 +1,5 @@
 using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Helpers;
 using HotChocolate.Language;
 
 namespace GraphQL.DomainService.GraphTypes;
@@ -16,7 +17,7 @@ public class QueryOutputType : ObjectType<object>
 
     protected override void Configure(IObjectTypeDescriptor<object> descriptor)
     {
-        descriptor.Name(_schema.CollectionName);
+        descriptor.Name(_schema.SchemaName);
 
         descriptor.Field("_id")
             .Type<IdType>()
@@ -24,11 +25,10 @@ public class QueryOutputType : ObjectType<object>
 
         foreach (var field in _schema.Fields)
         {
-            if (IsScalar(field.Type))
+            if (GraphQLTypeHelper.IsScalar(field.Type))
             {
                 descriptor.Field(field.Name)
-                    .Type(GetOutputType(field.Type, field.IsArray))
-                    //.Resolve(ctx => ((IDictionary<string, object>)ctx.Parent<object>()).TryGetValue(field.Name, out var value) ? value : null);
+                    .Type(GraphQLTypeHelper.GetTypeNode(field.Type, field.IsArray))
                     .Resolve(ctx =>
                     {
                         var parent = ctx.Parent<object>();
@@ -44,8 +44,7 @@ public class QueryOutputType : ObjectType<object>
                 if (field.IsArray)
                 {
                     descriptor.Field(field.Name)
-                        .Type(GetCustomType(field.Type, true))
-                        //.Resolve(ctx => ((IDictionary<string, object>)ctx.Parent<object>()).TryGetValue(field.Name, out var value) ? value : null);
+                        .Type(GraphQLTypeHelper.GetCustomTypeNode(field.Type, true))
                         .Resolve(ctx =>
                                 {
                                     var parent = ctx.Parent<object>();
@@ -59,52 +58,11 @@ public class QueryOutputType : ObjectType<object>
                 else
                 {
                     descriptor.Field(field.Name)
-                        .Type(GetCustomType(field.Type))
+                        .Type(GraphQLTypeHelper.GetCustomTypeNode(field.Type))
                         .Resolve(ctx => ((IDictionary<string, object>)ctx.Parent<object>()).TryGetValue(field.Name, out var value) ? value : null);
                 }
             }
         }
-    }
-
-    private static bool IsScalar(string type) =>
-        type is "String" or "Int" or "Float" or "Boolean" or "ID";
-
-    private static ITypeNode GetOutputType(string type, bool isArray = false)
-    {
-        var innerType = type switch
-        {
-
-            "String" => new NamedTypeNode("String"),
-            "Int" => new NamedTypeNode("Int"),
-            "Float" => new NamedTypeNode("Float"),
-            "Boolean" => new NamedTypeNode("Boolean"),
-            "ID" => new NamedTypeNode("ID"),
-            _ => throw new ArgumentException($"Unknown scalar type: {type}")
-        };
-        return isArray ? new ListTypeNode(innerType) : innerType;
-    }
-    private static ITypeNode GetCustomType(string type, bool isArray = false)
-    {
-        if (isArray)
-        {
-            return new ListTypeNode(new NamedTypeNode(type)); // Assuming type is a valid GraphQL type name
-        }
-        return new NamedTypeNode(type); // Assuming type is a valid GraphQL type name
-    }
-}
-
-public class DynamicObjectTypeReference : ObjectType
-{
-    private readonly string _typeName;
-
-    public DynamicObjectTypeReference(string typeName)
-    {
-        _typeName = typeName;
-    }
-
-    protected override void Configure(IObjectTypeDescriptor descriptor)
-    {
-        descriptor.Name(_typeName);
     }
 }
 

@@ -1,6 +1,8 @@
 using System;
 using GraphQL.DomainService.Enities;
 using GraphQL.DomainService.Models;
+using GraphQL.DomainService.Models.Constants;
+using GraphQL.DomainService.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -8,17 +10,17 @@ namespace GraphQL.DomainService.Resolvers;
 
 public class MutationResolver
 {
-    private readonly IMongoDatabase _mongoDb;
-    public MutationResolver(IMongoDatabase mongoDb)
+    public readonly IRepository<BsonDocument> _repository;
+    public MutationResolver(IRepository<BsonDocument> repository)
     {
-        _mongoDb = mongoDb;
+        _repository = repository;
     }
     public void ResolveInsertSchema(
     IObjectTypeDescriptor descriptor,
     SchemaDefinition schema,
     InputObjectType inputType)
     {
-        var fieldName = "insert" + schema.CollectionName;
+        var fieldName = "insert" + schema.SchemaName;
 
         descriptor.Field(fieldName)
             .Argument("input", a => a.Type(inputType))
@@ -26,15 +28,24 @@ public class MutationResolver
             .Resolve(async ctx =>
             {
                 var input = ctx.ArgumentValue<Dictionary<string, object>>("input");
-                var collection = _mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
+                if (input.ContainsKey(GraphQLConstant.InputEntityIdFieldName))
+                {
+                    var itemId = input[GraphQLConstant.InputEntityIdFieldName];
+                    input.Add(GraphQLConstant.DbEntityIdFieldName, itemId ?? Guid.NewGuid().ToString());
+                    input.Remove(GraphQLConstant.InputEntityIdFieldName);
+                }
+                else
+                {
+                    input.Add(GraphQLConstant.DbEntityIdFieldName, Guid.NewGuid().ToString());
+                }
 
                 var document = BsonDocument.Create(input);
-                await collection.InsertOneAsync(document);
+                await _repository.InsertAsync(schema.CollectionName, document);
 
                 return new InsertResponse
                 {
                     Acknowledged = true,
-                    InsertedId = document["_id"].ToString()
+                    InsertedId = document[GraphQLConstant.DbEntityIdFieldName].ToString()
                 };
             });
     }
@@ -44,7 +55,7 @@ public class MutationResolver
         SchemaDefinition schema,
         InputObjectType inputType)
     {
-        var fieldName = "update" + schema.CollectionName;
+        var fieldName = "update" + schema.SchemaName;
 
         descriptor.Field(fieldName)
             .Argument("filter", a => a.Type<StringType>())
@@ -55,13 +66,12 @@ public class MutationResolver
                 var filterJson = ctx.ArgumentValue<string>("filter");
                 var input = ctx.ArgumentValue<Dictionary<string, object>>("input");
 
-                var collection = _mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
                 var filter = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(filterJson);
 
-                var update = new BsonDocument("$set", new BsonDocument(
-                    input.Select(kv => new BsonElement(kv.Key, BsonValue.Create(kv.Value)))));
+                var update = new BsonDocument(
+                    input.Select(kv => new BsonElement(kv.Key, BsonValue.Create(kv.Value))));
 
-                var result = await collection.UpdateOneAsync(filter, update);
+                var result = await _repository.UpdateAsync(schema.CollectionName, filter, update);
 
                 return new UpdateResponse
                 {
@@ -75,7 +85,7 @@ public class MutationResolver
         IObjectTypeDescriptor descriptor,
         SchemaDefinition schema)
     {
-        var fieldName = "delete" + schema.CollectionName;
+        var fieldName = "delete" + schema.SchemaName;
 
         descriptor.Field(fieldName)
             .Argument("filter", a => a.Type<StringType>())
@@ -84,9 +94,7 @@ public class MutationResolver
             {
                 var filterJson = ctx.ArgumentValue<string>("filter");
                 var filter = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(filterJson);
-
-                var collection = _mongoDb.GetCollection<BsonDocument>(schema.CollectionName);
-                var result = await collection.DeleteManyAsync(filter);
+                var result = await _repository.DeleteAsync(schema.CollectionName, filter);
 
                 return new DeleteResponse
                 {

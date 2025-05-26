@@ -15,7 +15,7 @@ public class DeleteInputType : InputObjectType
 
     protected override void Configure(IInputObjectTypeDescriptor descriptor)
     {
-        descriptor.Name(_schema.CollectionName + "DeleteInput");
+        descriptor.Name(_schema.SchemaName + "DeleteInput");
 
         descriptor.Field("filter").Type<NonNullType<StringType>>(); // JSON filter
     }
