@@ -1,7 +1,6 @@
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using GraphQL.DomainService.Helpers;
 using HotChocolate.Language;
-using System.Collections.Concurrent;
 
 namespace GraphQL.DomainService.GraphTypes;
 
@@ -9,8 +8,6 @@ public class InsertInputType : InputObjectType<object>
 {
     private readonly SchemaDefinition _schema;
     private readonly Dictionary<string, SchemaDefinition> _schemaMap;
-
-    private static readonly ConcurrentDictionary<string, InputObjectType> _cache = new();
 
     public InsertInputType(SchemaDefinition schema, Dictionary<string, SchemaDefinition> schemaMap)
     {

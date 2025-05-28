@@ -64,3 +64,4 @@ nunit-*.xml
 
 # Visual Studio Code directory
 .vscode/
+src/graphql-dynamic/graphql-dynamic.sln.DotSettings.user

@@ -1,6 +1,5 @@
 using GraphQL.DomainService.Models;
 using GraphQL.DomainService.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GraphQL.Api.Controllers;

@@ -1,9 +1,8 @@
 using GraphQL.DomainService;
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using GraphQL.DomainService.Repositories;
 using GraphQL.DomainService.Resolvers;
 using GraphQL.DomainService.Services;
-using HotChocolate;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -20,9 +19,12 @@ builder.Services.AddSingleton(serviceProvider =>
 builder.Services.AddSingleton<IRepository<BsonDocument>, GraphqlRepository>();
 builder.Services.AddSingleton<IRepository<SchemaDefinition>, SchemaDefinitionRepository>();
 builder.Services.AddSingleton<SchemaBuilderService>();
+builder.Services.AddSingleton<ISchemaDefinitionService, SchemaDefinitionService>();
 builder.Services.AddSingleton<ISchemaConfigurationService, SchemaConfigurationService>();
-builder.Services.AddSingleton<QueryResolver>();
-builder.Services.AddSingleton<MutationResolver>();
+builder.Services.AddSingleton<IQueryService, QueryService>();
+builder.Services.AddSingleton<IMutationService, MutationService>();
+builder.Services.AddSingleton<SchemaResolver>();
+
 
 // Register GraphQL
 builder.Services

@@ -1,6 +1,6 @@
 
 
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 
 namespace GraphQL.DomainService.GraphTypes;
 

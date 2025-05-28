@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using GraphQL.DomainService.Helpers;
 using HotChocolate.Language;
 
@@ -22,7 +22,7 @@ public class UpdateInputType : InputObjectType<object>
     {
         descriptor.Name($"{_schema.SchemaName}UpdateInput");
 
-        descriptor.Field("_id").Type<StringType>();
+        // descriptor.Field("_id").Type<StringType>();
 
         foreach (var field in _schema.Fields)
         {

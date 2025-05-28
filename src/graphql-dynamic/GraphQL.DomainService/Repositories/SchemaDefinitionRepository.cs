@@ -1,5 +1,6 @@
 using System;
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
+using GraphQL.DomainService.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -70,21 +71,31 @@ public class SchemaDefinitionRepository : IRepository<SchemaDefinition>
         return data;
     }
 
-    public async Task<UpdateResult> UpdateAsync(string collectionName,
+    public async Task<ActionResponse> UpdateAsync(string collectionName,
         FilterDefinition<SchemaDefinition> filter,
         SchemaDefinition data)
     {
         var collection = _database.GetCollection<SchemaDefinition>(collectionName);
-        var update = Builders<SchemaDefinition>.Update.Set(x => x, data);
-        var result = await collection.UpdateOneAsync(filter, update);
-        return result;
+        //var update = Builders<SchemaDefinition>.Update.Set(x => x, data);
+        var result = await collection.ReplaceOneAsync(filter, data);//UpdateOneAsync(filter, update);
+        var actionResponse = new ActionResponse
+        {
+            Acknowledged = result.IsAcknowledged,
+            TotalImpactedData = result.ModifiedCount
+        };
+        return actionResponse;
     }
 
-    public async Task<DeleteResult> DeleteAsync(string collectionName, FilterDefinition<SchemaDefinition> filter)
+    public async Task<ActionResponse> DeleteAsync(string collectionName, FilterDefinition<SchemaDefinition> filter)
     {
         var collection = _database.GetCollection<SchemaDefinition>(collectionName);
         var result = await collection.DeleteOneAsync(filter);
-        return result;
+        var actionResponse = new ActionResponse
+        {
+            Acknowledged = result.IsAcknowledged,
+            TotalImpactedData = result.DeletedCount
+        };
+        return actionResponse;
     }
 
     public async Task<SchemaDefinition?> GetItemAsync(string collectionName, string id)

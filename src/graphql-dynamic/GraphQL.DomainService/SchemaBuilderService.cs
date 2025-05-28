@@ -1,25 +1,20 @@
-using System;
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using GraphQL.DomainService.GraphTypes;
 using GraphQL.DomainService.Helpers;
 using GraphQL.DomainService.Models.Constants;
 using GraphQL.DomainService.Repositories;
 using GraphQL.DomainService.Resolvers;
 using MongoDB.Bson;
-using MongoDB.Driver;
 
-namespace GraphQL.DomainService.Services;
+namespace GraphQL.DomainService;
 
 public class SchemaBuilderService
 {
-    // private readonly IMongoDatabase _mongoDb;
     private readonly IRepository<SchemaDefinition> _schemaRepository;
-    private readonly QueryResolver _queryResolver;
-    private readonly MutationResolver _mutationResolver;
-    public SchemaBuilderService(QueryResolver queryResolver, MutationResolver mutationResolver, IRepository<SchemaDefinition> schemaRepository)
+    private readonly SchemaResolver _schemaResolver;
+    public SchemaBuilderService(SchemaResolver schemaResolver, IRepository<SchemaDefinition> schemaRepository)
     {
-        _queryResolver = queryResolver;
-        _mutationResolver = mutationResolver;
+        _schemaResolver = schemaResolver;
         _schemaRepository = schemaRepository;
     }
     public async Task BuildSchema(ISchemaBuilder schemaBuilder, CancellationToken cancellationToken)
@@ -70,7 +65,7 @@ public class SchemaBuilderService
             {
                 if (schema.SchemaOnly)
                     continue;
-                _queryResolver.ResolveSchema(descriptor, schema, dynamicTypes);
+                _schemaResolver.ResolveQuerySchema(descriptor, schema, dynamicTypes);
             }
         });
     }
@@ -86,8 +81,8 @@ public class SchemaBuilderService
 
             foreach (var schema in schemas)
             {
-                _mutationResolver.ResolveInsertSchema(descriptor, schema, insertInputTypes[schema.SchemaName]);
-                _mutationResolver.ResolveUpdateSchema(descriptor, schema, updateInputTypes[schema.SchemaName]);
+                _schemaResolver.ResolveInsertSchema(descriptor, schema, insertInputTypes[schema.SchemaName]);
+                _schemaResolver.ResolveUpdateSchema(descriptor, schema, updateInputTypes[schema.SchemaName]);
                 // MutationResolver.ResolveDeleteSchema(_mongoDb, descriptor, schema);
             }
         });
@@ -103,28 +98,24 @@ public class SchemaBuilderService
     private InputObjectType ResolveInputType(SchemaDefinition schemaDefinition)
     {
         return new InputObjectType(descriptor =>
-                    {
-                        descriptor.Name($"{schemaDefinition.SchemaName}Input");
-                        foreach (var field in schemaDefinition.Fields)
-                        {
-                            // var type = GraphQLTypeHelper.GetTypeNode(field.Type, field.IsArray);
-                            // descriptor.Field(field.Name).Type(type);
-                            descriptor.ResolveInputTypeDescriptor(field);
-                        }
-                    });
+        {
+            descriptor.Name($"{schemaDefinition.SchemaName}Input");
+            foreach (var field in schemaDefinition.Fields)
+            {
+                descriptor.ResolveInputTypeDescriptor(field);
+            }
+        });
     }
     private ObjectType ResolveType(SchemaDefinition schemaDefinition)
     {
         return new ObjectType(descriptor =>
-                    {
-                        descriptor.Name(schemaDefinition.SchemaName);
-                        foreach (var field in schemaDefinition.Fields)
-                        {
-                            // var type = GraphQLTypeHelper.GetTypeNode(field.Type, field.IsArray);
-                            // descriptor.Field(field.Name).Type(type);
-                            descriptor.ResolveObjectTypeDescriptor(field);
-                        }
-                    });
+        {
+            descriptor.Name(schemaDefinition.SchemaName);
+            foreach (var field in schemaDefinition.Fields)
+            {
+                descriptor.ResolveObjectTypeDescriptor(field);
+            }
+        });
     }
 
 }

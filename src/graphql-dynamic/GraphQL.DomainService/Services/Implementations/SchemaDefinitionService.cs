@@ -1,8 +1,9 @@
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using GraphQL.DomainService.Models;
 using GraphQL.DomainService.Models.Constants;
 using GraphQL.DomainService.Models.Responses;
 using GraphQL.DomainService.Repositories;
+using GraphQL.DomainService.Helpers;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -18,13 +19,10 @@ public class SchemaDefinitionService : ISchemaDefinitionService
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public async Task<ServiceResponse<InsertResponse>> CreateSchemaAsync(CreateSchemaDefinitionRequest request)
+    public async Task<ServiceResponse<ActionResponse>> CreateSchemaAsync(CreateSchemaDefinitionRequest request)
     {
         var schema = new SchemaDefinition
         {
-            ItemId = Guid.NewGuid().ToString(),
-            CreatedOn = DateTime.UtcNow,
-            UpdatedOn = DateTime.UtcNow,
             CollectionName = request.CollectionName,
             Fields = request.Fields?.Select(f => new FieldDefinition
             {
@@ -35,23 +33,25 @@ public class SchemaDefinitionService : ISchemaDefinitionService
             SchemaName = request.SchemaName,
             SchemaOnly = request.SchemaOnly
         };
+        schema.InjectDefaultValue();
+        schema.AddDefaultFields();
 
         var result = await _repository.InsertAsync(_collectionName, schema);
 
-        return new ServiceResponse<InsertResponse>
+        return new ServiceResponse<ActionResponse>
         {
-            Data = new InsertResponse { Acknowledged = true, InsertedId = result.ItemId },
+            Data = new ActionResponse { Acknowledged = true, ItemId = result.ItemId },
             IsSuccess = true
         };
     }
 
-    public async Task<ServiceResponse<UpdateResponse>> UpdateSchemaAsync(UpdateSchemaDefinitionRequest request)
+    public async Task<ServiceResponse<ActionResponse>> UpdateSchemaAsync(UpdateSchemaDefinitionRequest request)
     {
-        var schema = await _repository.GetItemAsync(_collectionName, request.Id);
+        var schema = await _repository.GetItemAsync(_collectionName, request.ItemId);
 
         if (schema == null)
         {
-            return new ServiceResponse<UpdateResponse>
+            return new ServiceResponse<ActionResponse>
             {
                 IsSuccess = false,
                 Message = "Schema not found"
@@ -64,42 +64,42 @@ public class SchemaDefinitionService : ISchemaDefinitionService
             Name = f.Name,
             Type = f.Type,
             IsArray = f.IsArray
-        }).ToList() ?? new List<FieldDefinition>();
+        }).ToList() ?? [];
         schema.SchemaName = request.SchemaName;
         schema.SchemaOnly = request.SchemaOnly;
-        schema.UpdatedOn = DateTime.UtcNow;
+        schema.InjectDefaultValue();
 
         var filter = Builders<SchemaDefinition>.Filter.Eq(s => s.ItemId, schema.ItemId);
 
         var result = await _repository.UpdateAsync(_collectionName, filter, schema);
-
-        return new ServiceResponse<UpdateResponse>
+        return new ServiceResponse<ActionResponse>
         {
-            Data = new UpdateResponse { Acknowledged = true, TotalUpdated = result.ModifiedCount },
+            Data = result,
             IsSuccess = true
         };
+
     }
 
-    public async Task<ServiceResponse<DeleteResponse>> DeleteSchemaAsync(string id)
+    public async Task<ServiceResponse<ActionResponse>> DeleteSchemaAsync(string id)
     {
         var schema = await _repository.GetItemAsync(_collectionName, id);
 
         if (schema == null)
         {
-            return new ServiceResponse<DeleteResponse>
+            return new ServiceResponse<ActionResponse>
             {
                 IsSuccess = false,
                 Message = "Schema not found"
             };
         }
 
-        await _repository.DeleteAsync(_collectionName, id);
-
-        return new ServiceResponse<DeleteResponse>
+        var result =  await _repository.DeleteAsync(_collectionName, id);
+        return new ServiceResponse<ActionResponse>
         {
-            Data = new DeleteResponse { Acknowledged = true, TotalDeleted = 1 },
+            Data = result,
             IsSuccess = true
         };
+
     }
 
     public async Task<ServiceResponse<SchemaDefinitionResponse>> GetSchemaByIdAsync(string id)

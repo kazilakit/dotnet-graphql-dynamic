@@ -4,5 +4,5 @@ namespace GraphQL.DomainService.Models;
 
 public class UpdateSchemaDefinitionRequest : CreateSchemaDefinitionRequest
 {
-    public string Id { get; set; }
+    public string ItemId { get; set; }
 }

@@ -7,9 +7,9 @@ namespace GraphQL.DomainService.Services;
 
 public interface ISchemaDefinitionService
 {
-    Task<ServiceResponse<InsertResponse>> CreateSchemaAsync(CreateSchemaDefinitionRequest request);
-    Task<ServiceResponse<UpdateResponse>> UpdateSchemaAsync(UpdateSchemaDefinitionRequest request);
-    Task<ServiceResponse<DeleteResponse>> DeleteSchemaAsync(string id);
+    Task<ServiceResponse<ActionResponse>> CreateSchemaAsync(CreateSchemaDefinitionRequest request);
+    Task<ServiceResponse<ActionResponse>> UpdateSchemaAsync(UpdateSchemaDefinitionRequest request);
+    Task<ServiceResponse<ActionResponse>> DeleteSchemaAsync(string id);
     Task<ServiceResponse<SchemaDefinitionResponse>> GetSchemaByIdAsync(string id);
     Task<ServiceResponse<PaginationResponse<SchemaDefinitionResponse>>> GetAllSchemasAsync(GetSchemaDefinitionListRequest request);
 

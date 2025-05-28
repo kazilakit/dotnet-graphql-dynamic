@@ -1,5 +1,5 @@
 using System;
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using HotChocolate.Language;
 
 namespace GraphQL.DomainService.Helpers;

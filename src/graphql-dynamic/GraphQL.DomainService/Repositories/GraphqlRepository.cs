@@ -1,4 +1,5 @@
 using System;
+using GraphQL.DomainService.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -65,21 +66,31 @@ public class GraphqlRepository : IRepository<BsonDocument>
         return data;
     }
 
-    public async Task<UpdateResult> UpdateAsync(string collectionName,
+    public async Task<ActionResponse> UpdateAsync(string collectionName,
         FilterDefinition<BsonDocument> filter,
         BsonDocument data)
     {
         var collection = _database.GetCollection<BsonDocument>(collectionName);
-        var update = Builders<BsonDocument>.Update.Set("$set", data);
+        var update = new BsonDocument("$set", data);
         var result = await collection.UpdateOneAsync(filter, update);
-        return result;
+        var actionResponse = new ActionResponse
+        {
+            Acknowledged = result.IsAcknowledged,
+            TotalImpactedData = result.ModifiedCount
+        };
+        return actionResponse;
     }
 
-    public async Task<DeleteResult> DeleteAsync(string collectionName, FilterDefinition<BsonDocument> filter)
+    public async Task<ActionResponse> DeleteAsync(string collectionName, FilterDefinition<BsonDocument> filter)
     {
         var collection = _database.GetCollection<BsonDocument>(collectionName);
         var result = await collection.DeleteOneAsync(filter);
-        return result;
+        var actionResponse = new ActionResponse
+        {
+            Acknowledged = result.IsAcknowledged,
+            TotalImpactedData = result.DeletedCount
+        };
+        return actionResponse;
     }
 
     public async Task<BsonDocument?> GetItemAsync(string collectionName, string id)

@@ -1,4 +1,4 @@
-using GraphQL.DomainService.Enities;
+using GraphQL.DomainService.Entities;
 using GraphQL.DomainService.Helpers;
 using HotChocolate.Language;
 

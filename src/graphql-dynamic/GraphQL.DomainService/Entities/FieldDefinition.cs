@@ -1,6 +1,6 @@
 using System;
 
-namespace GraphQL.DomainService.Enities;
+namespace GraphQL.DomainService.Entities;
 
 public class FieldDefinition
 {
